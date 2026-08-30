@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en" data-line="blue">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Leave By — the day-route planner for people who sell on the road</title>
+<meta name="description" content="Add your customers. Get the order to visit them in, the time to leave home, and a live re-plan the moment a meeting runs long." />
+<meta name="theme-color" content="#0B1220" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Manrope:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* ============ TOKENS ============ */
+:root{
+  --bg:#0B1220; --bg2:#0F1A2E; --surface:#131F35; --surface2:#18263F;
+  --ink:#EAF1FF; --ink2:#B9C7DE; --muted:#7A8CA8;
+  --line:#24334D; --accent:#3D8BFF; --accent2:#5EE7C4; --onAccent:#04101F;
+  --ok:#37D6A8; --warn:#FFC53D; --bad:#FF6B6B; --glow:61,139,255;
+  --r:18px; --maxw:1120px;
+}
+[data-line="magenta"]{--bg:#15070F;--bg2:#210C1A;--surface:#26101F;--surface2:#331528;--ink:#FFEAF6;--ink2:#E4B9D3;--muted:#A87A94;--line:#422034;--accent:#FF4D9D;--accent2:#FFB25E;--onAccent:#1B0510;--glow:255,77,157;}
+[data-line="yellow"]{--bg:#12100A;--bg2:#1C1810;--surface:#221D12;--surface2:#2E2718;--ink:#FFF6E2;--ink2:#DFCEA6;--muted:#9C8B65;--line:#3B3220;--accent:#FFC93C;--accent2:#FF8A4C;--onAccent:#1A1405;--glow:255,201,60;}
+[data-line="aqua"]{--bg:#04140F;--bg2:#082018;--surface:#0B291F;--surface2:#10362A;--ink:#E4FFF5;--ink2:#A9D9C8;--muted:#6E9A8A;--line:#174535;--accent:#28E0A8;--accent2:#63C8FF;--onAccent:#02130D;--glow:40,224,168;}
+[data-line="violet"]{--bg:#0C0818;--bg2:#150F27;--surface:#1B1333;--surface2:#241A44;--ink:#EFE9FF;--ink2:#C3B6E6;--muted:#8579AD;--line:#2E2352;--accent:#9B6BFF;--accent2:#4ED8FF;--onAccent:#0A0518;--glow:155,107,255;}
+[data-line="day"]{--bg:#F4F6FA;--bg2:#FFFFFF;--surface:#FFFFFF;--surface2:#EDF1F7;--ink:#0E1726;--ink2:#41506A;--muted:#6E7E97;--line:#D8E0EC;--accent:#1D4ED8;--accent2:#0E9384;--onAccent:#FFFFFF;--glow:29,78,216;}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font-family:Manrope,system-ui,sans-serif;font-size:16px;line-height:1.6;
+  transition:background .5s ease,color .5s ease;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 22px}
+a{color:inherit;text-decoration:none}
+h1,h2,h3{font-family:"Bricolage Grotesque",Manrope,sans-serif;font-weight:800;line-height:1.02;letter-spacing:-.03em}
+h1{font-size:clamp(40px,8.4vw,80px)}
+h2{font-size:clamp(28px,4.6vw,46px)}
+h3{font-size:19px;letter-spacing:-.01em}
+.mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+.eyebrow{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
+.lede{color:var(--ink2);font-size:clamp(16px,2.1vw,19px);max-width:56ch}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:6px}
+
+/* ambient */
+.aura{position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(58vw 46vw at 78% -8%,rgba(var(--glow),.20),transparent 62%),
+             radial-gradient(48vw 40vw at 4% 34%,rgba(var(--glow),.11),transparent 60%);
+  transition:background .5s ease}
+main,header{position:relative;z-index:1}
+
+/* ============ NAV ============ */
+header{position:sticky;top:0;z-index:60;backdrop-filter:blur(14px);
+  background:color-mix(in srgb,var(--bg) 78%,transparent);border-bottom:1px solid var(--line)}
+.nav{display:flex;align-items:center;justify-content:space-between;height:66px}
+.mark{display:flex;align-items:center;gap:10px;font-family:"Bricolage Grotesque";font-weight:800;font-size:18px;letter-spacing:-.02em}
+.bullet{width:13px;height:13px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px rgba(var(--glow),.2);
+  animation:beat 2.6s ease-in-out infinite}
+@keyframes beat{0%,100%{box-shadow:0 0 0 4px rgba(var(--glow),.2)}50%{box-shadow:0 0 0 10px rgba(var(--glow),0)}}
+.navr{display:flex;align-items:center;gap:8px}
+.lang{display:flex;border:1px solid var(--line);border-radius:999px;padding:3px;background:var(--surface)}
+.lang button{font:600 12px Manrope;color:var(--muted);background:none;border:0;padding:6px 11px;border-radius:999px;cursor:pointer;transition:.25s}
+.lang button.on{background:var(--accent);color:var(--onAccent)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;border:0;cursor:pointer;
+  font:700 15px Manrope;padding:14px 24px;border-radius:999px;background:var(--accent);color:var(--onAccent);
+  transition:transform .18s cubic-bezier(.2,.8,.3,1),box-shadow .28s;box-shadow:0 8px 30px rgba(var(--glow),.32)}
+.btn:hover{transform:translateY(-3px);box-shadow:0 16px 44px rgba(var(--glow),.46)}
+.btn:active{transform:translateY(0) scale(.98)}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line);box-shadow:none}
+.btn.ghost:hover{border-color:var(--accent);box-shadow:0 0 0 3px rgba(var(--glow),.14)}
+.btn.sm{padding:10px 18px;font-size:13.5px}
+@media(max-width:640px){.navr .btn.sm{display:none}}
+
+/* ============ HERO ============ */
+.hero{padding:74px 0 30px}
+.hero .eyebrow{margin-bottom:20px}
+.grad{background:linear-gradient(96deg,var(--accent),var(--accent2),var(--accent));
+  background-size:260% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;
+  animation:slide 7s linear infinite}
+@keyframes slide{to{background-position:260% 0}}
+.hero h1{margin-bottom:22px}
+.hero .lede{margin-bottom:32px}
+.cta{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.hint{font-size:13px;color:var(--muted);margin-top:16px}
+
+/* departure board — the signature */
+.board{margin-top:52px;border:1px solid var(--line);border-radius:26px;background:
+   linear-gradient(180deg,var(--surface2),var(--surface));overflow:hidden;
+   box-shadow:0 34px 90px rgba(0,0,0,.36)}
+[data-line="day"] .board{box-shadow:0 24px 60px rgba(20,40,80,.12)}
+.bhead{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:13px 20px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--accent) 9%,transparent)}
+.bhead span{font-family:"JetBrains Mono",monospace;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink2)}
+.livedot{display:inline-flex;align-items:center;gap:7px;color:var(--ok);font-size:11px;font-family:"JetBrains Mono",monospace}
+.livedot i{width:7px;height:7px;border-radius:50%;background:var(--ok);animation:beat2 1.6s infinite}
+@keyframes beat2{0%,100%{opacity:1}50%{opacity:.25}}
+.bbody{padding:28px 20px 22px;text-align:center}
+.blabel{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--muted)}
+.clock{font-family:"JetBrains Mono",monospace;font-weight:700;font-size:clamp(46px,12vw,86px);
+  letter-spacing:-.03em;line-height:1;margin:10px 0 4px;display:flex;justify-content:center;gap:2px}
+.clock b{display:inline-block;min-width:.62em;font-weight:700}
+.colon{animation:beat2 1.15s steps(1) infinite}
+.suffix{font-size:.42em;align-self:flex-end;margin-left:8px;margin-bottom:.5em;color:var(--ink2)}
+.bstats{display:flex;justify-content:center;flex-wrap:wrap;gap:10px 26px;margin-top:16px;
+  font-family:"JetBrains Mono",monospace;font-size:12.5px;color:var(--ink2)}
+.bstats b{color:var(--accent);font-weight:700}
+.stops{border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr))}
+.stop{padding:15px 16px;border-right:1px solid var(--line);display:flex;gap:10px;align-items:flex-start;
+  opacity:0;transform:translateY(10px);animation:rise .55s forwards}
+.stop:last-child{border-right:0}
+.stop i{width:9px;height:9px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:6px;
+  box-shadow:0 0 0 3px rgba(var(--glow),.18)}
+.stop.late i{background:var(--warn);box-shadow:0 0 0 3px rgba(255,197,61,.2)}
+.stop .t{font-family:"JetBrains Mono",monospace;font-size:12.5px;color:var(--ink)}
+.stop .n{font-size:12px;color:var(--muted)}
+@keyframes rise{to{opacity:1;transform:none}}
+
+/* ============ THE LINE (stations) ============ */
+.section{padding:96px 0}
+.shead{max-width:620px;margin-bottom:52px}
+.shead h2{margin:14px 0 14px}
+.route{position:relative;padding-left:56px}
+.route:before{content:"";position:absolute;left:19px;top:8px;bottom:8px;width:3px;border-radius:3px;
+  background:var(--line)}
+.route .fill{position:absolute;left:19px;top:8px;width:3px;border-radius:3px;
+  background:linear-gradient(180deg,var(--accent),var(--accent2));height:0;transition:height .12s linear;
+  box-shadow:0 0 18px rgba(var(--glow),.5)}
+.station{position:relative;padding:0 0 46px}
+.station:last-child{padding-bottom:0}
+.station .knob{position:absolute;left:-49px;top:2px;width:29px;height:29px;border-radius:50%;
+  background:var(--bg);border:3px solid var(--line);display:grid;place-items:center;
+  font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--muted);transition:.45s}
+.station.lit .knob{border-color:var(--accent);color:var(--accent);box-shadow:0 0 0 6px rgba(var(--glow),.16)}
+.station h3{margin-bottom:7px;transition:color .45s}
+.station.lit h3{color:var(--accent)}
+.station p{color:var(--ink2);max-width:54ch}
+.station{opacity:.42;transform:translateX(-6px);transition:opacity .5s,transform .5s}
+.station.lit{opacity:1;transform:none}
+
+/* ============ CARDS ============ */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(258px,1fr));gap:16px}
+.card{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);padding:24px;
+  transition:transform .3s cubic-bezier(.2,.8,.3,1),border-color .3s,box-shadow .3s;position:relative;overflow:hidden}
+.card:hover{transform:translateY(-5px);border-color:var(--accent);box-shadow:0 20px 46px rgba(0,0,0,.28)}
+[data-line="day"] .card:hover{box-shadow:0 18px 40px rgba(20,40,80,.1)}
+.card:after{content:"";position:absolute;inset:0;background:radial-gradient(240px 120px at 50% 0,rgba(var(--glow),.16),transparent 70%);
+  opacity:0;transition:opacity .35s}
+.card:hover:after{opacity:1}
+.card .ico{font-size:21px;margin-bottom:13px;display:block}
+.card h3{margin-bottom:7px}
+.card p{color:var(--ink2);font-size:14.5px}
+
+/* ============ LINE PICKER ============ */
+.picker{display:flex;gap:10px;flex-wrap:wrap;margin-top:28px}
+.chip{display:flex;align-items:center;gap:9px;border:1px solid var(--line);background:var(--surface);
+  padding:11px 17px;border-radius:999px;cursor:pointer;font:600 13.5px Manrope;color:var(--ink2);transition:.28s}
+.chip:hover{transform:translateY(-2px);color:var(--ink)}
+.chip.on{border-color:var(--accent);color:var(--ink);box-shadow:0 0 0 3px rgba(var(--glow),.15)}
+.swatch{width:15px;height:15px;border-radius:50%}
+
+/* ============ CLOSER ============ */
+.closer{border:1px solid var(--line);border-radius:28px;padding:clamp(34px,6vw,62px);text-align:center;
+  background:linear-gradient(150deg,var(--surface2),var(--surface));position:relative;overflow:hidden}
+.closer:before{content:"";position:absolute;inset:-60% -10% auto;height:220px;
+  background:radial-gradient(closest-side,rgba(var(--glow),.28),transparent);filter:blur(10px)}
+.closer h2{margin-bottom:16px;position:relative}
+.closer p{color:var(--ink2);max-width:48ch;margin:0 auto 30px;position:relative}
+footer{border-top:1px solid var(--line);padding:34px 0 46px;color:var(--muted);font-size:13.5px}
+.frow{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;align-items:center}
+
+/* scroll progress rail */
+#prog{position:fixed;top:0;left:0;height:3px;width:0;z-index:200;
+  background:linear-gradient(90deg,var(--accent),var(--accent2));box-shadow:0 0 14px rgba(var(--glow),.7)}
+
+/* rotating headline word */
+.roto{display:inline-grid;vertical-align:bottom}
+.roto span{grid-area:1/1;opacity:0;transform:translateY(.5em) rotateX(-45deg);
+  transform-origin:top;transition:opacity .5s,transform .5s cubic-bezier(.2,.8,.3,1)}
+.roto span.on{opacity:1;transform:none}
+
+/* button shine */
+.btn{position:relative;overflow:hidden}
+.btn:before{content:"";position:absolute;top:0;left:-140%;width:55%;height:100%;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.42),transparent);transform:skewX(-18deg)}
+.btn:hover:before{animation:shine .85s}
+@keyframes shine{to{left:150%}}
+
+/* stat band */
+.stats-band{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1px;
+  background:var(--line);border:1px solid var(--line);border-radius:22px;overflow:hidden}
+.statc{background:var(--surface);padding:26px 18px;text-align:center}
+.statc .n{font-family:"JetBrains Mono",monospace;font-weight:700;font-size:clamp(26px,5vw,38px);
+  letter-spacing:-.03em;background:linear-gradient(96deg,var(--accent),var(--accent2),var(--accent));
+  background-size:260% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:slide 6s linear infinite}
+.statc .l{font-size:12.5px;color:var(--muted);margin-top:6px}
+
+/* phone mockup */
+.showcase{display:grid;grid-template-columns:1fr;gap:38px;align-items:center}
+@media(min-width:900px){.showcase{grid-template-columns:1fr 1fr;gap:56px}}
+.phone{justify-self:center;width:min(300px,84vw);border:9px solid var(--surface2);border-radius:38px;
+  background:var(--bg2);box-shadow:0 40px 90px rgba(0,0,0,.45),0 0 0 1px var(--line);overflow:hidden;
+  transform:rotate(-1.6deg);transition:transform .6s cubic-bezier(.2,.8,.3,1)}
+.phone:hover{transform:rotate(0) translateY(-8px)}
+[data-line="day"] .phone{box-shadow:0 30px 70px rgba(20,40,80,.16),0 0 0 1px var(--line)}
+.pnotch{height:22px;display:flex;align-items:center;justify-content:center}
+.pnotch i{width:56px;height:5px;border-radius:99px;background:var(--line)}
+.pbody{padding:0 14px 18px}
+.pcard{background:linear-gradient(155deg,var(--surface2),var(--surface));border:1px solid var(--line);
+  border-radius:17px;padding:14px;margin-bottom:11px}
+.pbig{font-family:"JetBrains Mono",monospace;font-size:30px;font-weight:700;letter-spacing:-.03em;
+  background:linear-gradient(96deg,var(--accent),var(--accent2),var(--accent));background-size:260% 100%;
+  -webkit-background-clip:text;background-clip:text;color:transparent;animation:slide 6s linear infinite}
+.prow{display:flex;gap:10px;align-items:flex-start;margin-bottom:11px}
+.prail{display:flex;flex-direction:column;align-items:center;flex-shrink:0}
+.pdot{width:24px;height:24px;border-radius:50%;background:var(--accent);color:var(--onAccent);
+  display:grid;place-items:center;font:700 11px "JetBrains Mono";animation:beat 3s ease-in-out infinite}
+.pline{width:2px;flex:1;background:var(--line);margin-top:3px;min-height:26px}
+.pmini{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:9px 11px}
+.pmini .t{font:700 12.5px Manrope}
+.pmini .s{font:400 10.5px "JetBrains Mono";color:var(--muted);margin-top:2px}
+.ppill{display:inline-block;font:600 9.5px "JetBrains Mono";padding:3px 8px;border-radius:99px;
+  background:var(--okBg,rgba(55,214,168,.14));color:var(--ok);margin:2px 0 8px}
+
+/* FAQ */
+.faq{border-top:1px solid var(--line)}
+.qa{border-bottom:1px solid var(--line)}
+.q{width:100%;text-align:left;display:flex;justify-content:space-between;align-items:center;gap:16px;
+  padding:22px 2px;font:700 16.5px "Bricolage Grotesque",Manrope;color:var(--ink);letter-spacing:-.01em}
+.q i{font-style:normal;color:var(--accent);font-size:22px;transition:transform .35s;flex-shrink:0}
+.qa.open .q i{transform:rotate(45deg)}
+.aw{overflow:hidden;height:0;transition:height .38s cubic-bezier(.2,.8,.3,1)}
+.aw p{color:var(--ink2);padding:0 2px 22px;max-width:60ch}
+
+/* reveal */
+.rv{opacity:0;transform:translateY(22px);transition:opacity .7s cubic-bezier(.2,.8,.3,1),transform .7s cubic-bezier(.2,.8,.3,1)}
+.rv.in{opacity:1;transform:none}
+@media(prefers-reduced-motion:reduce){
+  *{animation:none!important;transition-duration:.01ms!important}
+  .rv,.station{opacity:1;transform:none}
+}
+</style>
+</head>
+<body>
+<div id="prog"></div>
+<div class="aura"></div>
+
+<header>
+ <div class="wrap nav">
+  <a class="mark" href="#top"><span class="bullet"></span>Leave&nbsp;By</a>
+  <div class="navr">
+   <div class="lang">
+     <button id="lgHi" class="on" onclick="setLang('hi')">Hinglish</button>
+     <button id="lgEn" onclick="setLang('en')">English</button>
+   </div>
+   <a class="btn sm" href="app.html" data-en="Open the planner" data-hi="Planner kholo">Planner kholo</a>
+  </div>
+ </div>
+</header>
+
+<main id="top">
+
+<!-- HERO -->
+<section class="wrap hero">
+  <div class="eyebrow" data-en="For people who sell on the road" data-hi="Un logon ke liye jo road pe kaam karte hain">Un logon ke liye jo road pe kaam karte hain</div>
+  <h1><span data-en="Leave at the" data-hi="Ghar se niklo">Ghar se niklo</span>
+    <span class="roto grad" id="roto">
+      <span class="on" data-en="right time" data-hi="sahi time pe">sahi time pe</span>
+      <span data-en="right order" data-hi="sahi order me">sahi order me</span>
+      <span data-en="right place" data-hi="sahi jagah pe">sahi jagah pe</span>
+    </span><span data-en=", every single day." data-hi=", har roz.">, har roz.</span></h1>
+  <p class="lede" data-en="Add the customers you have to meet. Get the order to visit them in, the exact time to walk out of your door, and a live re-plan the moment a meeting runs long." data-hi="Jin customers se milna hai, unhe add karo. Kis order me jaana hai, ghar se kitne baje nikalna hai, aur agar koi meeting lambi ho jaaye to baaki din turant dobara set — sab mil jaayega.">Jin customers se milna hai, unhe add karo. Kis order me jaana hai, ghar se kitne baje nikalna hai, aur agar koi meeting lambi ho jaaye to baaki din turant dobara set — sab mil jaayega.</p>
+  <div class="cta">
+    <a class="btn" href="app.html" data-en="Open the planner →" data-hi="Planner kholo →">Planner kholo →</a>
+    <a class="btn ghost" href="#how" data-en="See how it works" data-hi="Kaise chalta hai dekho">Kaise chalta hai dekho</a>
+  </div>
+  <p class="hint" data-en="Free. Nothing to install — it opens in your browser." data-hi="Bilkul free. Kuch install nahi karna — browser me hi khul jaata hai.">Bilkul free. Kuch install nahi karna — browser me hi khul jaata hai.</p>
+
+  <!-- SIGNATURE: departure board -->
+  <div class="board">
+    <div class="bhead">
+      <span data-en="Today · 5 stops" data-hi="Aaj · 5 stops">Aaj · 5 stops</span>
+      <span class="livedot"><i></i>LIVE</span>
+    </div>
+    <div class="bbody">
+      <div class="blabel" data-en="Leave home by" data-hi="Ghar se niklo">Ghar se niklo</div>
+      <div class="clock" id="clock">
+        <b data-d="0">0</b><b data-d="9">9</b><b class="colon">:</b><b data-d="4">4</b><b data-d="2">2</b><span class="suffix">AM</span>
+      </div>
+      <div class="bstats">
+        <span><b id="km">38.4</b> km</span>
+        <span><b id="drive">2h 14m</b> <span data-en="driving" data-hi="driving">driving</span></span>
+        <span><b id="free">6:05 PM</b> <span data-en="done" data-hi="free">free</span></span>
+      </div>
+    </div>
+    <div class="stops">
+      <div class="stop" style="animation-delay:.15s"><i></i><div><div class="t">9:58 AM</div><div class="n">Sharma Traders</div></div></div>
+      <div class="stop" style="animation-delay:.3s"><i></i><div><div class="t">11:20 AM</div><div class="n">Verma Store</div></div></div>
+      <div class="stop late" style="animation-delay:.45s"><i></i><div><div class="t">1:05 PM</div><div class="n" data-en="Khan Mobiles · tight" data-hi="Khan Mobiles · tight">Khan Mobiles · tight</div></div></div>
+      <div class="stop" style="animation-delay:.6s"><i></i><div><div class="t">3:10 PM</div><div class="n">R.K. Enterprises</div></div></div>
+      <div class="stop" style="animation-delay:.75s"><i></i><div><div class="t">5:00 PM</div><div class="n">Gupta &amp; Sons</div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<section class="wrap" style="padding:34px 0 8px">
+  <div class="stats-band rv">
+    <div class="statc"><div class="n" data-count="6">0</div><div class="l" data-en="stops planned in seconds" data-hi="stops seconds me plan">stops seconds me plan</div></div>
+    <div class="statc"><div class="n" data-count="40" data-suffix="%">0</div><div class="l" data-en="less zig-zag driving" data-hi="kam idhar-udhar ghoomna">kam idhar-udhar ghoomna</div></div>
+    <div class="statc"><div class="n" data-count="0" data-text="₹0">₹0</div><div class="l" data-en="to start using it" data-hi="shuru karne ka kharcha">shuru karne ka kharcha</div></div>
+    <div class="statc"><div class="n" data-count="2">0</div><div class="l" data-en="languages, switch any time" data-hi="languages, kabhi bhi badlo">languages, kabhi bhi badlo</div></div>
+  </div>
+</section>
+
+<!-- SHOWCASE -->
+<section class="wrap section" style="padding-top:70px">
+  <div class="showcase">
+    <div class="rv">
+      <div class="eyebrow" data-en="On your phone" data-hi="Aapke phone me">Aapke phone me</div>
+      <h2 style="margin:14px 0 16px" data-en="The whole day on one screen." data-hi="Poora din, ek screen pe.">Poora din, ek screen pe.</h2>
+      <p class="lede" data-en="Big number at the top: when to leave. Below it, every stop in order with the drive between them, and a green, amber or red mark telling you if the gap actually works." data-hi="Upar bada number: kab nikalna hai. Neeche har stop sahi order me, beech ka drive time, aur hara-peela-laal nishan jo batata hai ki gap sach me chalega ya nahi.">Upar bada number: kab nikalna hai. Neeche har stop sahi order me, beech ka drive time, aur hara-peela-laal nishan jo batata hai ki gap sach me chalega ya nahi.</p>
+      <div class="cta" style="margin-top:26px"><a class="btn" href="app.html" data-en="Try it now →" data-hi="Abhi try karo →">Abhi try karo →</a></div>
+    </div>
+    <div class="phone rv">
+      <div class="pnotch"><i></i></div>
+      <div class="pbody">
+        <div class="pcard">
+          <div class="eyebrow" style="font-size:9px" data-en="Leave home by" data-hi="Ghar se niklo">Ghar se niklo</div>
+          <div class="pbig">9:42 AM</div>
+          <div class="bstats" style="font-size:10px;justify-content:flex-start;gap:14px;margin-top:9px">
+            <span>5 stops</span><span>38.4 km</span>
+          </div>
+        </div>
+        <div class="ppill" data-en="✓ 22 min spare (safe)" data-hi="✓ 22 min spare (safe)">✓ 22 min spare (safe)</div>
+        <div class="prow"><div class="prail"><div class="pdot">1</div><div class="pline"></div></div>
+          <div class="pmini"><div class="t">Sharma Traders</div><div class="s">9:58 · stay 30m</div></div></div>
+        <div class="prow"><div class="prail"><div class="pdot" style="animation-delay:.4s">2</div><div class="pline"></div></div>
+          <div class="pmini"><div class="t">Verma Store</div><div class="s">11:20 · 8.2 km</div></div></div>
+        <div class="prow"><div class="prail"><div class="pdot" style="animation-delay:.8s;background:var(--warn);color:#1a1405">3</div></div>
+          <div class="pmini"><div class="t">Khan Mobiles</div><div class="s" data-en="1:05 · tight" data-hi="1:05 · tight">1:05 · tight</div></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- THE LINE -->
+<section class="wrap section" id="how">
+  <div class="shead rv">
+    <div class="eyebrow" data-en="The line" data-hi="Poora din, ek line me">Poora din, ek line me</div>
+    <h2 data-en="Five stations from your door and back." data-hi="Ghar se nikalne se wapas aane tak — paanch station.">Ghar se nikalne se wapas aane tak — paanch station.</h2>
+    <p class="lede" data-en="Every day runs the same way. Here is the whole thing." data-hi="Har din yahi tarika chalta hai. Poora process ye raha.">Har din yahi tarika chalta hai. Poora process ye raha.</p>
+  </div>
+
+  <div class="route" id="route">
+    <div class="fill" id="fill"></div>
+
+    <div class="station"><div class="knob">01</div>
+      <h3 data-en="Add the customer" data-hi="Customer add karo">Customer add karo</h3>
+      <p data-en="Paste the WhatsApp location pin or search the address. Set how long you'll actually sit with them — 20 minutes or two hours." data-hi="WhatsApp ka location pin paste karo ya address search karo. Aur ye bhi set karo ki us customer ke saath kitni der baithoge — 20 minute ya do ghante.">WhatsApp ka location pin paste karo ya address search karo. Aur ye bhi set karo ki us customer ke saath kitni der baithoge — 20 minute ya do ghante.</p></div>
+
+    <div class="station"><div class="knob">02</div>
+      <h3 data-en="Let the day sort itself" data-hi="Din khud set ho jaata hai">Din khud set ho jaata hai</h3>
+      <p data-en="Customers who can meet any day get grouped by how close they are, so one trip covers a whole area. Fixed appointments stay where they are." data-hi="Jo customers kisi bhi din mil sakte hain, unhe location ke hisaab se group kar diya jaata hai — ek hi trip me poora area cover. Fixed appointment apni jagah rehte hain.">Jo customers kisi bhi din mil sakte hain, unhe location ke hisaab se group kar diya jaata hai — ek hi trip me poora area cover. Fixed appointment apni jagah rehte hain.</p></div>
+
+    <div class="station"><div class="knob">03</div>
+      <h3 data-en="One number that matters" data-hi="Sirf ek number jo maayne rakhta hai">Sirf ek number jo maayne rakhta hai</h3>
+      <p data-en="When to walk out the door. Between every two stops you also see the drive time, the distance, and whether the gap is safe, tight, or a clash." data-hi="Ghar se kab nikalna hai. Har do stop ke beech drive time, distance, aur ye bhi ki gap safe hai, tight hai, ya clash ho raha hai.">Ghar se kab nikalna hai. Har do stop ke beech drive time, distance, aur ye bhi ki gap safe hai, tight hai, ya clash ho raha hai.</p></div>
+
+    <div class="station"><div class="knob">04</div>
+      <h3 data-en="A meeting ran long. Tap Done." data-hi="Meeting lambi ho gayi? Done dabao.">Meeting lambi ho gayi? Done dabao.</h3>
+      <p data-en="The rest of the day re-times itself from the real clock. If you're going to be late somewhere, that stop turns red and a ready message goes out on WhatsApp." data-hi="Baaki poora din abhi ke asli time se dobara set ho jaata hai. Kahin late ho rahe ho to wo stop laal ho jaata hai aur WhatsApp pe ready message bhejne ka button aa jaata hai.">Baaki poora din abhi ke asli time se dobara set ho jaata hai. Kahin late ho rahe ho to wo stop laal ho jaata hai aur WhatsApp pe ready message bhejne ka button aa jaata hai.</p></div>
+
+    <div class="station"><div class="knob">05</div>
+      <h3 data-en="Let clients propose, you decide" data-hi="Client option de, chunte aap ho">Client option de, chunte aap ho</h3>
+      <p data-en="Send a link. The client fills in the days and places that suit them. You see which option sits closest to a route you're already running, and pick that one." data-hi="Ek link bhejo. Client apne din aur jagah bhar dega. Aapko dikh jaayega kaunsa option aapke pehle se bane route ke sabse paas hai — wahi chun lo.">Ek link bhejo. Client apne din aur jagah bhar dega. Aapko dikh jaayega kaunsa option aapke pehle se bane route ke sabse paas hai — wahi chun lo.</p></div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="wrap section" style="padding-top:20px">
+  <div class="shead rv">
+    <div class="eyebrow" data-en="On board" data-hi="Andar kya hai">Andar kya hai</div>
+    <h2 data-en="Built for a day that never goes to plan." data-hi="Us din ke liye bana hai jo kabhi plan ke hisaab se nahi chalta.">Us din ke liye bana hai jo kabhi plan ke hisaab se nahi chalta.</h2>
+  </div>
+  <div class="grid">
+    <div class="card rv"><span class="ico">🧭</span><h3 data-en="Full route in Maps" data-hi="Poora route Maps me">Poora route Maps me</h3><p data-en="One tap opens the whole day in Google Maps, in order. Every stop also has its own Navigate, Call and WhatsApp button." data-hi="Ek tap me poora din Google Maps me, sahi order me. Har stop pe alag se Navigate, Call aur WhatsApp button bhi.">Ek tap me poora din Google Maps me, sahi order me. Har stop pe alag se Navigate, Call aur WhatsApp button bhi.</p></div>
+    <div class="card rv"><span class="ico">📷</span><h3 data-en="Read it off a screenshot" data-hi="Screenshot se seedha">Screenshot se seedha</h3><p data-en="Upload the chat screenshot. The phone number, the name and even &quot;kal&quot; or &quot;parso&quot; get filled in for you to check." data-hi="Chat ka screenshot upload karo. Number, naam, aur &quot;kal&quot;/&quot;parso&quot; jaisi baat bhi date bana ke bhar deta hai — aap bas check kar lo.">Chat ka screenshot upload karo. Number, naam, aur "kal"/"parso" jaisi baat bhi date bana ke bhar deta hai — aap bas check kar lo.</p></div>
+    <div class="card rv"><span class="ico">🔒</span><h3 data-en="Your list stays on your phone" data-hi="List aapke phone me hi rehti hai">List aapke phone me hi rehti hai</h3><p data-en="Customers are saved on your own device, not on someone's server. Take a backup file any time." data-hi="Customers aapke apne phone me save hote hain, kisi server pe nahi. Backup file kabhi bhi le sakte ho.">Customers aapke apne phone me save hote hain, kisi server pe nahi. Backup file kabhi bhi le sakte ho.</p></div>
+    <div class="card rv"><span class="ico">🌐</span><h3 data-en="Hinglish or English" data-hi="Hinglish ya English">Hinglish ya English</h3><p data-en="Switch the whole app between the two, any time. Whatever your team actually reads." data-hi="Poori app dono me switch ho jaati hai, kabhi bhi. Jo aapki team asli me padhti hai.">Poori app dono me switch ho jaati hai, kabhi bhi. Jo aapki team asli me padhti hai.</p></div>
+    <div class="card rv"><span class="ico">📵</span><h3 data-en="Nothing to install" data-hi="Kuch install nahi karna">Kuch install nahi karna</h3><p data-en="Open the link. Add it to your home screen if you want an icon. No store, no updates to chase." data-hi="Link kholo. Icon chahiye to home screen pe add kar lo. Na store, na update ka jhanjhat.">Link kholo. Icon chahiye to home screen pe add kar lo. Na store, na update ka jhanjhat.</p></div>
+    <div class="card rv"><span class="ico">⚡</span><h3 data-en="Six lines to ride" data-hi="Chhe alag lines">Chhe alag lines</h3><p data-en="Six colour schemes, including a bright one that survives direct sunlight. Pick yours below." data-hi="Chhe colour scheme — ek bilkul bright bhi, jo dhoop me bhi saaf dikhta hai. Neeche apna chuno.">Chhe colour scheme — ek bilkul bright bhi, jo dhoop me bhi saaf dikhta hai. Neeche apna chuno.</p></div>
+  </div>
+</section>
+
+<!-- LINE PICKER -->
+<section class="wrap section" style="padding-top:20px">
+  <div class="shead rv" style="margin-bottom:0">
+    <div class="eyebrow" data-en="Pick your line" data-hi="Apni line chuno">Apni line chuno</div>
+    <h2 data-en="Change the colour of everything." data-hi="Sab kuch ka rang badlo.">Sab kuch ka rang badlo.</h2>
+    <p class="lede" data-en="Tap one. This page and the planner both change instantly, and the planner remembers it." data-hi="Ek dabao. Ye page aur planner dono turant badal jaate hain, aur planner yaad bhi rakhta hai.">Ek dabao. Ye page aur planner dono turant badal jaate hain, aur planner yaad bhi rakhta hai.</p>
+    <div class="picker" id="picker"></div>
+    <button class="btn ghost sm" style="margin-top:14px" id="playBtn" onclick="playLines()" data-en="▶ Play all six" data-hi="▶ Chhe dikhao">▶ Chhe dikhao</button>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="wrap section" style="padding-top:20px">
+  <div class="shead rv">
+    <div class="eyebrow" data-en="Questions" data-hi="Sawaal">Sawaal</div>
+    <h2 data-en="Straight answers." data-hi="Seedhe jawab.">Seedhe jawab.</h2>
+  </div>
+  <div class="faq rv" id="faq">
+    <div class="qa"><button class="q" data-en="Is it really free?" data-hi="Kya sach me free hai?">Kya sach me free hai?<i>+</i></button>
+      <div class="aw"><p data-en="Yes. There is nothing to pay and no card to enter. It runs in your browser." data-hi="Haan. Na koi payment, na card. Bas browser me chalta hai.">Haan. Na koi payment, na card. Bas browser me chalta hai.</p></div></div>
+    <div class="qa"><button class="q" data-en="Where is my customer list stored?" data-hi="Meri customer list kahan save hoti hai?">Meri customer list kahan save hoti hai?<i>+</i></button>
+      <div class="aw"><p data-en="On your own phone, not on a server. Nobody else can see it — which also means you should take a backup from Settings now and then." data-hi="Aapke apne phone me, kisi server pe nahi. Koi aur nahi dekh sakta — iska matlab ye bhi hai ki Settings se backup lete rehna chahiye.">Aapke apne phone me, kisi server pe nahi. Koi aur nahi dekh sakta — iska matlab ye bhi hai ki Settings se backup lete rehna chahiye.</p></div></div>
+    <div class="qa"><button class="q" data-en="Do I need to install an app?" data-hi="App install karni padegi?">App install karni padegi?<i>+</i></button>
+      <div class="aw"><p data-en="No. Open the link. If you want an icon on your home screen, use your browser menu and add it — it then opens full-screen like any app." data-hi="Nahi. Bas link kholo. Icon chahiye to browser menu se home screen pe add kar lo — phir normal app ki tarah full-screen khulta hai.">Nahi. Bas link kholo. Icon chahiye to browser menu se home screen pe add kar lo — phir normal app ki tarah full-screen khulta hai.</p></div></div>
+    <div class="qa"><button class="q" data-en="Can my client book a time themselves?" data-hi="Kya client khud time book kar sakta hai?">Kya client khud time book kar sakta hai?<i>+</i></button>
+      <div class="aw"><p data-en="They send you the days, times and places that suit them. Slots you have already booked are blocked, so they cannot pick those. You choose one and confirm — and they can request a change later from the same link." data-hi="Wo apne din, time aur jagah bhejta hai. Jo slot aap pehle se booked ho, wo block rehte hain — unhe wo chun hi nahi sakta. Aap ek chun ke confirm karte ho, aur baad me wo usi link se change bhi maang sakta hai.">Wo apne din, time aur jagah bhejta hai. Jo slot aap pehle se booked ho, wo block rehte hain — unhe wo chun hi nahi sakta. Aap ek chun ke confirm karte ho, aur baad me wo usi link se change bhi maang sakta hai.</p></div></div>
+    <div class="qa"><button class="q" data-en="How accurate are the timings?" data-hi="Timing kitni sahi hoti hai?">Timing kitni sahi hoti hai?<i>+</i></button>
+      <div class="aw"><p data-en="They are an estimate from distance and an average city speed you set yourself — not live traffic. Treat the leaving time as a good guide, not a guarantee." data-hi="Ye distance aur aapki set ki hui average city speed se banta hai — live traffic nahi. Nikalne ka time ek achha andaaza samjho, guarantee nahi.">Ye distance aur aapki set ki hui average city speed se banta hai — live traffic nahi. Nikalne ka time ek achha andaaza samjho, guarantee nahi.</p></div></div>
+  </div>
+</section>
+
+<!-- CLOSER -->
+<section class="wrap section" style="padding-top:24px">
+  <div class="closer rv">
+    <h2 data-en="Your next working day is already sorted." data-hi="Aapka agla kaam ka din pehle se set hai.">Aapka agla kaam ka din pehle se set hai.</h2>
+    <p data-en="Add three customers and see the order and the leaving time. It takes about two minutes." data-hi="Teen customer add karo aur order + nikalne ka time dekh lo. Do minute ka kaam hai.">Teen customer add karo aur order + nikalne ka time dekh lo. Do minute ka kaam hai.</p>
+    <a class="btn" href="app.html" style="position:relative" data-en="Open the planner →" data-hi="Planner kholo →">Planner kholo →</a>
+  </div>
+</section>
+
+<footer class="wrap">
+  <div class="frow">
+    <div class="mark" style="font-size:15px"><span class="bullet"></span>Leave&nbsp;By</div>
+    <div data-en="Made in Ghaziabad, for the road." data-hi="Ghaziabad me bana, road ke liye.">Ghaziabad me bana, road ke liye.</div>
+  </div>
+</footer>
+</main>
+
+<script>
+"use strict";
+var LINES=[
+ {id:"blue",   en:"Blue Line",    hi:"Blue Line",    c:"#3D8BFF"},
+ {id:"magenta",en:"Magenta Line", hi:"Magenta Line", c:"#FF4D9D"},
+ {id:"yellow", en:"Yellow Line",  hi:"Yellow Line",  c:"#FFC93C"},
+ {id:"aqua",   en:"Aqua Line",    hi:"Aqua Line",    c:"#28E0A8"},
+ {id:"violet", en:"Violet Line",  hi:"Violet Line",  c:"#9B6BFF"},
+ {id:"day",    en:"Day Line · bright", hi:"Day Line · bright", c:"#1D4ED8"}
+];
+var lang="hi", line="blue";
+try{ lang=localStorage.getItem("lb_lang")||"hi"; line=localStorage.getItem("lb_line")||"blue"; }catch(e){}
+
+function applyLang(){
+  document.documentElement.lang = (lang==="en"?"en":"en");
+  document.querySelectorAll("[data-en]").forEach(function(el){
+    var v = (lang==="en") ? el.getAttribute("data-en") : el.getAttribute("data-hi");
+    if(v!=null) el.textContent = v;
+  });
+  document.getElementById("lgEn").classList.toggle("on",lang==="en");
+  document.getElementById("lgHi").classList.toggle("on",lang!=="en");
+  drawPicker();
+}
+window.setLang=function(l){ lang=l; try{localStorage.setItem("lb_lang",l);}catch(e){} applyLang(); };
+
+function applyLine(){
+  document.documentElement.setAttribute("data-line",line);
+  var found=LINES.filter(function(x){return x.id===line;})[0];
+  var m=document.querySelector('meta[name="theme-color"]');
+  if(m&&found) m.setAttribute("content", line==="day"?"#F4F6FA":"#0B1220");
+  drawPicker();
+}
+window.setLine=function(id){ line=id; try{localStorage.setItem("lb_line",id);}catch(e){} applyLine(); };
+
+function drawPicker(){
+  var p=document.getElementById("picker"); if(!p) return;
+  p.innerHTML=LINES.map(function(L){
+    return '<button class="chip'+(L.id===line?" on":"")+'" onclick="setLine(\''+L.id+'\')">'
+      +'<span class="swatch" style="background:'+L.c+'"></span>'+(lang==="en"?L.en:L.hi)+'</button>';
+  }).join("");
+}
+
+/* scroll reveal */
+var io=new IntersectionObserver(function(es){
+  es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target); } });
+},{threshold:.16});
+document.querySelectorAll(".rv").forEach(function(el){io.observe(el);});
+
+/* the line draws + stations light up as you scroll past them */
+var route=document.getElementById("route"), fill=document.getElementById("fill");
+var stations=[].slice.call(document.querySelectorAll(".station"));
+function trace(){
+  if(!route) return;
+  var r=route.getBoundingClientRect(), vh=innerHeight;
+  var prog=(vh*0.72 - r.top)/r.height;
+  prog=Math.max(0,Math.min(1,prog));
+  fill.style.height=(prog*r.height)+"px";
+  stations.forEach(function(s){
+    var b=s.getBoundingClientRect();
+    s.classList.toggle("lit", b.top < vh*0.74);
+  });
+}
+addEventListener("scroll",trace,{passive:true}); addEventListener("resize",trace);
+
+/* board: digits settle into place on load, then the stats count up */
+function settle(){
+  var digits=document.querySelectorAll("#clock b[data-d]");
+  digits.forEach(function(el,i){
+    var target=el.getAttribute("data-d"), n=0;
+    var iv=setInterval(function(){
+      el.textContent=Math.floor(Math.random()*10);
+      if(++n>7+i*3){ clearInterval(iv); el.textContent=target; }
+    },55);
+  });
+  var km=document.getElementById("km"), v=0;
+  var k=setInterval(function(){ v+=2.6; if(v>=38.4){v=38.4;clearInterval(k);} km.textContent=v.toFixed(1); },42);
+}
+if(!matchMedia("(prefers-reduced-motion: reduce)").matches) settle();
+
+/* rotating headline word */
+var rotoI=0, rotoEls=[].slice.call(document.querySelectorAll("#roto span"));
+if(rotoEls.length>1 && !matchMedia("(prefers-reduced-motion: reduce)").matches){
+  setInterval(function(){
+    rotoEls[rotoI].classList.remove("on");
+    rotoI=(rotoI+1)%rotoEls.length;
+    rotoEls[rotoI].classList.add("on");
+  },2600);
+}
+
+/* scroll progress rail */
+var prog=document.getElementById("prog");
+function bar(){var h=document.documentElement.scrollHeight-innerHeight;
+  prog.style.width=(h>0?(scrollY/h)*100:0)+"%";}
+addEventListener("scroll",bar,{passive:true}); addEventListener("resize",bar); bar();
+
+/* count-up stats */
+var counted=false;
+var cio=new IntersectionObserver(function(es){
+  es.forEach(function(e){
+    if(!e.isIntersecting||counted) return; counted=true;
+    document.querySelectorAll("[data-count]").forEach(function(el){
+      if(el.getAttribute("data-text")){el.textContent=el.getAttribute("data-text");return;}
+      var target=parseFloat(el.getAttribute("data-count")), sfx=el.getAttribute("data-suffix")||"", v=0;
+      var iv=setInterval(function(){
+        v+=Math.max(1,target/26);
+        if(v>=target){v=target;clearInterval(iv);}
+        el.textContent=Math.round(v)+sfx;
+      },34);
+    });
+  });
+},{threshold:.4});
+var band=document.querySelector(".stats-band"); if(band) cio.observe(band);
+
+/* FAQ accordion */
+document.querySelectorAll("#faq .q").forEach(function(q){
+  q.addEventListener("click",function(){
+    var qa=q.parentElement, aw=qa.querySelector(".aw"), isOpen=qa.classList.contains("open");
+    document.querySelectorAll("#faq .qa.open").forEach(function(o){
+      o.classList.remove("open"); o.querySelector(".aw").style.height="0px";
+    });
+    if(!isOpen){ qa.classList.add("open"); aw.style.height=aw.scrollHeight+"px"; }
+  });
+});
+
+/* play all palettes */
+var playing=null;
+window.playLines=function(){
+  if(playing){clearInterval(playing);playing=null;return;}
+  var i=LINES.map(function(x){return x.id;}).indexOf(line);
+  playing=setInterval(function(){ i=(i+1)%LINES.length; setLine(LINES[i].id); },1100);
+  setTimeout(function(){ if(playing){clearInterval(playing);playing=null;} },1100*LINES.length+120);
+};
+
+applyLine(); applyLang(); trace();
+</script>
+</body>
+</html>
